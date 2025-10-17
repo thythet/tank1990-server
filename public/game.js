@@ -1,70 +1,121 @@
-const socket = io(); // connect to server
-
-let username = '';
-let gameCanvas = document.getElementById('gameCanvas');
-let ctx = gameCanvas.getContext('2d');
-
 const loginScreen = document.getElementById('loginScreen');
+const gameCanvas = document.getElementById('gameCanvas');
 const loginBtn = document.getElementById('loginBtn');
+const usernameInput = document.getElementById('username');
+const passwordInput = document.getElementById('password');
 const loginError = document.getElementById('loginError');
 
-loginBtn.onclick = async () => {
-  username = document.getElementById('username').value.trim();
-  const password = document.getElementById('password').value.trim();
-  if (!username || !password) {
-    loginError.innerText = 'Enter username & password';
-    return;
-  }
+let socket;
+let player = { x: 400, y: 300, size: 30, color: 'green', username: '' };
+let bullets = [];
+let keys = {};
+
+// --- Login Handler ---
+loginBtn.addEventListener('click', async () => {
+  const username = usernameInput.value;
+  const password = passwordInput.value;
 
   try {
     const res = await fetch('/api/login', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
     });
     const data = await res.json();
-    if (data.error) { loginError.innerText = data.error; return; }
+    if (res.ok) {
+      loginScreen.style.display = 'none';
+      gameCanvas.style.display = 'block';
+      player.username = data.username;
 
-    // Login success
-    loginScreen.style.display = 'none';
-    gameCanvas.style.display = 'block';
-    initGame();
-  } catch(err) {
-    loginError.innerText = 'Server error';
+      startGame();
+    } else {
+      loginError.textContent = data.error || 'Login failed';
+    }
+  } catch (err) {
+    loginError.textContent = 'Server error';
   }
-};
+});
 
-let players = {}; // {id: {x, y, username}}
+// --- Game Setup ---
+function startGame() {
+  const ctx = gameCanvas.getContext('2d');
+  socket = io(); // connect to server
 
-function initGame() {
-  // send player join info to server
-  socket.emit('join', { username });
+  // send player join info
+  socket.emit('playerJoin', { username: player.username });
 
-  // Listen for player updates from server
-  socket.on('players', (serverPlayers) => {
-    players = serverPlayers;
-    drawGame();
+  // receive updates from server (other players)
+  socket.on('updatePlayers', serverPlayers => {
+    drawGame(ctx, serverPlayers);
   });
 
-  // Example movement keys
-  window.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowUp') socket.emit('move', { direction:'up' });
-    if (e.key === 'ArrowDown') socket.emit('move', { direction:'down' });
-    if (e.key === 'ArrowLeft') socket.emit('move', { direction:'left' });
-    if (e.key === 'ArrowRight') socket.emit('move', { direction:'right' });
+  // --- Movement ---
+  window.addEventListener('keydown', e => keys[e.key] = true);
+  window.addEventListener('keyup', e => keys[e.key] = false);
+
+  // --- Shoot ---
+  window.addEventListener('keydown', e => {
+    if (e.key === ' ' || e.key === 'Spacebar') {
+      bullets.push({ x: player.x + player.size/2, y: player.y, size: 5, color: 'yellow', dy: -5 });
+      socket.emit('shoot', { x: player.x, y: player.y });
+    }
+  });
+
+  // --- Game Loop ---
+  function gameLoop() {
+    updatePlayer();
+    updateBullets();
+    drawGame(ctx);
+    requestAnimationFrame(gameLoop);
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
+// --- Update Player ---
+function updatePlayer() {
+  const speed = 4;
+  if (keys['ArrowUp']) player.y -= speed;
+  if (keys['ArrowDown']) player.y += speed;
+  if (keys['ArrowLeft']) player.x -= speed;
+  if (keys['ArrowRight']) player.x += speed;
+
+  // boundaries
+  player.x = Math.max(0, Math.min(gameCanvas.width - player.size, player.x));
+  player.y = Math.max(0, Math.min(gameCanvas.height - player.size, player.y));
+}
+
+// --- Update Bullets ---
+function updateBullets() {
+  bullets.forEach((b, i) => {
+    b.y += b.dy;
+    if (b.y < 0) bullets.splice(i, 1);
   });
 }
 
-function drawGame() {
-  ctx.clearRect(0,0, gameCanvas.width, gameCanvas.height);
-  for (const id in players) {
-    const p = players[id];
-    // Draw tank
-    ctx.fillStyle = 'green';
-    ctx.fillRect(p.x, p.y, 30, 30);
-    // Draw username
-    ctx.fillStyle = '#fff';
-    ctx.font = '12px Arial';
-    ctx.fillText(p.username, p.x, p.y-5);
-  }
+// --- Draw Game ---
+function drawGame(ctx, serverPlayers=[]) {
+  ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+
+  // Draw player bullets
+  bullets.forEach(b => {
+    ctx.fillStyle = b.color;
+    ctx.fillRect(b.x, b.y, b.size, b.size);
+  });
+
+  // Draw player
+  ctx.fillStyle = player.color;
+  ctx.fillRect(player.x, player.y, player.size, player.size);
+  ctx.fillStyle = 'white';
+  ctx.fillText(player.username, player.x, player.y - 5);
+
+  // Draw other players from server
+  serverPlayers.forEach(p => {
+    if (p.username !== player.username) {
+      ctx.fillStyle = 'red';
+      ctx.fillRect(p.x, p.y, p.size, p.size);
+      ctx.fillStyle = 'white';
+      ctx.fillText(p.username, p.x, p.y - 5);
+    }
+  });
 }
