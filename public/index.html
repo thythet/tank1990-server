@@ -5,17 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tank1990 Online</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; background: #222; color: #fff; }
+    #loginScreen { margin-top: 100px; }
+    #gameCanvas { background: #000; display: none; margin: 20px auto; border: 2px solid #fff; }
+  </style>
 </head>
 <body>
   <div id="loginScreen">
     <h2>Login</h2>
-    <input type="text" id="username" placeholder="Username">
-    <input type="password" id="password" placeholder="Password">
+    <input type="text" id="username" placeholder="Username"><br><br>
+    <input type="password" id="password" placeholder="Password"><br><br>
     <button id="loginBtn">Login</button>
-    <p id="loginError"></p>
+    <p id="loginError" style="color:red;"></p>
   </div>
 
-  <canvas id="gameCanvas" width="600" height="400" style="display:none;"></canvas>
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
 
   <script src="https://cdn.socket.io/4.7.0/socket.io.min.js"></script>
   <script src="game.js"></script>
