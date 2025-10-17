@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const cors = require('cors');
+const path = require('path'); // added for serving public files
 const { createUser, verifyUser, signToken, loadUsers } = require('./auth');
 const { setupSocket } = require('./game');
 
@@ -9,6 +10,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// --- Serve frontend files ---
+app.use(express.static(path.join(__dirname, '../public')));
+
+// Fallback route to serve index.html
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
+// --- API routes ---
 app.post('/api/signup', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -30,6 +40,7 @@ app.post('/api/login', async (req, res) => {
 
 app.get('/api/admin/users', (req, res) => { res.json(loadUsers()); });
 
+// --- Create server + Socket.io ---
 const server = http.createServer(app);
 const io = require('socket.io')(server, { cors: { origin: '*' } });
 setupSocket(io);
