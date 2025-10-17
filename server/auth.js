@@ -5,10 +5,15 @@ const jwt = require('jsonwebtoken');
 
 const usersFile = path.join(__dirname, 'users.json');
 
-// Load users from file
+// Load users safely
 function loadUsers() {
   if (!fs.existsSync(usersFile)) return [];
-  return JSON.parse(fs.readFileSync(usersFile));
+  try {
+    const data = JSON.parse(fs.readFileSync(usersFile));
+    return Array.isArray(data) ? data : [];
+  } catch (e) {
+    return [];
+  }
 }
 
 // Save users to file
@@ -18,7 +23,7 @@ function saveUsers(users) {
 
 // Create a new user
 async function createUser(username, password, role='player') {
-  let users = loadUsers();
+  const users = loadUsers();
   if (users.find(u => u.username === username)) throw new Error('User exists');
   const hash = await bcrypt.hash(password, 10);
   users.push({ username, password: hash, role });
