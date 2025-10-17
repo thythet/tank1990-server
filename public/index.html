@@ -1,91 +1,216 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tank1990 — Battle Defense (Modern + Online Multiplayer)</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Tank 1990 Online</title>
+  <style>
+    :root{ --bg:#111; --ui:#e6e6e6; --accent:#59a6ff }
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial;color:var(--ui);background:linear-gradient(180deg,#020202 0%, #081018 100%);}
+    .wrap{max-width:900px;margin:18px auto;padding:14px;text-align:center;}
+    h1{font-size:18px;margin:0 0 8px;color:var(--accent)}
+    p.small{margin:4px 0 12px;color:#9aa}
+    .game{display:flex;gap:12px;align-items:flex-start; display:none;}
+    canvas{background:#07101a;border:8px solid rgba(255,255,255,0.03);image-rendering:pixelated}
+    .panel{min-width:220px}
+    .stat{background:rgba(255,255,255,0.03);padding:10px;border-radius:8px;margin-bottom:10px}
+    .stat b{display:block;font-size:20px;color:var(--accent)}
+    .controls{font-size:13px;color:#cdd}
+    .footer{margin-top:12px;font-size:12px;color:#879}
+    button{background:var(--accent);border:0;padding:8px 10px;border-radius:8px;color:#012;cursor:pointer}
+    button:active{transform:translateY(1px)}
+    #loginScreen{margin-top:80px;}
+    #loginScreen input{margin:5px 0;padding:5px;width:150px;}
+    #loginScreen button{margin-top:8px;}
+    @media (max-width:900px){.game{flex-direction:column;align-items:center}.panel{width:100%;max-width:420px}}
+  </style>
 </head>
 <body>
-<div class="app">
-  <header>
-    <div>
-      <h1>Tank1990 — Battle Defense</h1>
-      <div class="small">AI enemies + online multiplayer with username display.</div>
+  <div class="wrap">
+    <div id="loginScreen">
+      <h2>Login</h2>
+      <input type="text" id="username" placeholder="Username"><br>
+      <input type="password" id="password" placeholder="Password"><br>
+      <button id="loginBtn">Login</button>
+      <p id="loginError" style="color:red;"></p>
     </div>
-    <div class="hud">
-      <div class="stat">Score: <span id="uiScore">0</span></div>
-      <div class="stat">Lives: <span id="uiLives">3</span></div>
-      <div class="stat">Level: <span id="uiLevel">1</span></div>
-      <div>
-        <button class="btn" id="startBtn">Start / Resume</button>
+
+    <h1>Tank 1990 — Battle Defense</h1>
+    <p class="small">A compact playable clone. Use arrow keys/WASD + Space to shoot.</p>
+
+    <div class="game">
+      <canvas id="game" width="640" height="640"></canvas>
+      <div class="panel">
+        <div class="stat">
+          <b id="score">Score: 0</b>
+          <div>Lives: <span id="lives">3</span></div>
+          <div>Level: <span id="level">1</span></div>
+          <div>Enemies remaining: <span id="enemiesLeft">5</span></div>
+        </div>
+        <div class="stat controls">
+          <strong>Controls</strong>
+          <ul>
+            <li>Move: Arrow keys or WASD</li>
+            <li>Fire: Space</li>
+            <li>Pause: P</li>
+            <li>Restart: Restart button</li>
+          </ul>
+        </div>
+        <div class="stat">
+          <button id="restartBtn">Restart Game</button>
+        </div>
+        <div class="footer">Multiplayer ready — designed for editing maps, speed, AI or visuals.</div>
       </div>
     </div>
-  </header>
-
-  <div class="layout">
-    <div class="panel">
-      <canvas id="gameCanvas" width="768" height="768"></canvas>
-    </div>
-    <aside class="panel">
-      <div class="admin-area">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <strong style="color:#e6f4ff">Accounts</strong>
-          <div id="loggedAs" class="username-tag">Guest</div>
-        </div>
-
-        <div id="authForms">
-          <div class="form">
-            <label class="label">Login (username & password)</label>
-            <input id="loginUser" placeholder="username">
-            <input id="loginPass" type="password" placeholder="password">
-            <div style="display:flex;gap:8px">
-              <button id="loginBtn" class="btn">Login</button>
-              <button id="guestBtn" class="btn">Guest</button>
-            </div>
-          </div>
-          <hr>
-          <div class="form">
-            <label class="label">Admin Sign-in</label>
-            <input id="adminPass" type="password" placeholder="admin password">
-            <div>
-              <button id="adminLoginBtn" class="btn">Admin Panel</button>
-            </div>
-          </div>
-        </div>
-
-        <div id="adminPanel" style="display:none;margin-top:8px">
-          <strong class="small">Admin — Manage Players</strong>
-          <div class="form">
-            <input id="newUserName" placeholder="new username">
-            <input id="newUserPass" placeholder="password">
-            <select id="newUserRole">
-              <option value="player">Player</option>
-              <option value="admin">Admin</option>
-            </select>
-            <div style="display:flex;gap:8px">
-              <button id="createUserBtn" class="btn">Create User</button>
-              <button id="listUsersBtn" class="btn">List Users</button>
-            </div>
-          </div>
-          <div id="usersList" style="max-height:200px;overflow:auto;margin-top:8px"></div>
-        </div>
-
-        <hr>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
-          <button id="restartBtn" class="btn">Restart</button>
-          <button id="networkBtn" class="btn">Enable Online</button>
-        </div>
-      </div>
-    </aside>
   </div>
 
-  <footer>
-    Note: For real online play, run a Node.js + Socket.IO server.
-  </footer>
-</div>
+  <script src="https://cdn.socket.io/4.7.0/socket.io.min.js"></script>
+  <script>
+    // --- Login ---
+    const loginScreen = document.getElementById('loginScreen');
+    const gameDiv = document.querySelector('.game');
+    const loginBtn = document.getElementById('loginBtn');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const loginError = document.getElementById('loginError');
 
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-<script src="game.js"></script>
+    let socket;
+    let playerUsername = '';
+
+    loginBtn.addEventListener('click', async () => {
+      const username = usernameInput.value;
+      const password = passwordInput.value;
+      try {
+        const res = await fetch('/api/login', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({username,password})
+        });
+        const data = await res.json();
+        if(res.ok){
+          loginScreen.style.display='none';
+          gameDiv.style.display='flex';
+          playerUsername = data.username;
+          startGame();
+        } else {
+          loginError.textContent = data.error || 'Login failed';
+        }
+      } catch(err){ loginError.textContent='Server error'; }
+    });
+
+    // --- Tank1990 Game Implementation ---
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    const TILE = 32;
+    const COLS = Math.floor(W/TILE);
+    const ROWS = Math.floor(H/TILE);
+
+    const scoreEl = document.getElementById('score');
+    const livesEl = document.getElementById('lives');
+    const levelEl = document.getElementById('level');
+    const enemiesLeftEl = document.getElementById('enemiesLeft');
+    const restartBtn = document.getElementById('restartBtn');
+
+    let keys = {}, bullets=[], enemies=[], explosions=[], tiles=[], player;
+    let score=0, lives=3, level=1, paused=false, enemyCountThisLevel=5, spawnCooldown=0;
+
+    class Tank{
+      constructor(x,y,dir='up',isEnemy=false){
+        this.x=x; this.y=y; this.dir=dir; this.size=28; this.speed=isEnemy?1.2:2.0;
+        this.isEnemy=isEnemy; this.cool=0; this.dead=false;
+        this.color=isEnemy? '#c64':'#7cf'; this.fireRate=isEnemy?60:20;
+      }
+      center(){return {x:this.x+TILE/2,y:this.y+TILE/2};}
+      rect(){return {x:this.x+2,y:this.y+2,w:this.size,h:this.size};}
+      update(){ if(this.dead)return; if(this.cool>0)this.cool--; if(this.isEnemy)this.enemyAI();
+        this.x=Math.max(2,Math.min(this.x,W-TILE-2)); this.y=Math.max(2,Math.min(this.y,H-TILE-2));
+      }
+      draw(ctx){
+        if(this.dead)return;
+        const r=this.rect(); roundRect(ctx,r.x,r.y,r.w,r.h,4,this.color);
+        ctx.fillStyle='#222';
+        const c=this.center();
+        let tx=c.x, ty=c.y;
+        const len=14;
+        if(this.dir=='up') ty-=len; else if(this.dir=='down') ty+=len;
+        else if(this.dir=='left') tx-=len; else tx+=len;
+        ctx.fillRect(Math.round(tx)-3,Math.round(ty)-3,6,6);
+        ctx.fillStyle='white';
+        if(!this.isEnemy) ctx.fillText(playerUsername, this.x, this.y-5);
+      }
+      fire(){
+        if(this.cool>0)return;
+        const c=this.center(); let bx=c.x,by=c.y,vx=0,vy=0,speed=this.isEnemy?4:6;
+        if(this.dir=='up') vy=-speed; else if(this.dir=='down') vy=speed;
+        else if(this.dir=='left') vx=-speed; else vx=speed;
+        bullets.push(new Bullet(bx,by,vx,vy,this.isEnemy));
+        this.cool=this.fireRate;
+      }
+      enemyAI(){ if(this.turnCooldown>0)this.turnCooldown--; if(Math.random()<0.005)this.fire();
+        let dx=0,dy=0;
+        if(this.dir=='up') dy=-this.speed; if(this.dir=='down') dy=this.speed;
+        if(this.dir=='left') dx=-this.speed; if(this.dir=='right') dx=this.speed;
+        if(!willCollide(this,dx,dy)) this.x+=dx,this.y+=dy;
+        else{ const dirs=['up','down','left','right']; this.dir=dirs[Math.floor(Math.random()*4)]; this.turnCooldown=20+Math.floor(Math.random()*60);}
+      }
+    }
+
+    class Bullet{
+      constructor(x,y,vx,vy,fromEnemy=false){this.x=x;this.y=y;this.vx=vx;this.vy=vy;this.r=4;this.dead=false;this.fromEnemy=fromEnemy;}
+      update(){
+        if(this.dead)return; this.x+=this.vx; this.y+=this.vy;
+        if(this.x<0||this.x>W||this.y<0||this.y>H) this.dead=true;
+      }
+      draw(ctx){ if(this.dead)return; ctx.fillStyle=this.fromEnemy?'#ffcc66':'#fff';
+        ctx.beginPath(); ctx.arc(this.x,this.y,this.r,0,Math.PI*2); ctx.fill();
+      }
+    }
+
+    class Explosion{
+      constructor(x,y){this.x=x;this.y=y;this.t=0;}
+      update(){this.t++;}
+      draw(ctx){const a=this.t/20; if(a>1) return; ctx.save(); ctx.globalAlpha=1-a; ctx.beginPath(); ctx.fillStyle='orange'; ctx.arc(this.x,this.y,8+20*a,0,Math.PI*2); ctx.fill(); ctx.restore();}
+    }
+
+    function roundRect(ctx,x,y,w,h,r,fill){ctx.fillStyle=fill; ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.fill();}
+
+    function initGame(){
+      bullets=[]; enemies=[]; explosions=[]; tiles=[]; score=0; lives=3; level=1; enemyCountThisLevel=5; paused=false;
+      player = new Tank(TILE*9+2, TILE*17+2,'up',false);
+    }
+
+    window.addEventListener('keydown', e=>{ keys[e.key.toLowerCase()]=true; if(e.key===' '){ e.preventDefault(); } if(e.key==='p') paused=!paused; });
+    window.addEventListener('keyup', e=>{ keys[e.key.toLowerCase()]=false; });
+    restartBtn.addEventListener('click', initGame);
+
+    function update(){
+      if(paused)return;
+      if(player && !player.dead){
+        let moved=false;
+        if(keys['arrowup']||keys['w']){ player.dir='up'; if(!willCollide(player,0,-player.speed)) player.y-=player.speed;}
+        else if(keys['arrowdown']||keys['s']){ player.dir='down'; if(!willCollide(player,0,player.speed)) player.y+=player.speed;}
+        if(keys['arrowleft']||keys['a']){ player.dir='left'; if(!willCollide(player,-player.speed,0)) player.x-=player.speed;}
+        else if(keys['arrowright']||keys['d']){ player.dir='right'; if(!willCollide(player,player.speed,0)) player.x+=player.speed;}
+        if(keys[' ']) player.fire();
+        player.update();
+      }
+      bullets.forEach(b=>b.update()); bullets=bullets.filter(b=>!b.dead);
+    }
+
+    function draw(){
+      ctx.clearRect(0,0,W,H);
+      if(player) player.draw(ctx);
+      bullets.forEach(b=>b.draw(ctx));
+      explosions.forEach(ex=>ex.draw(ctx));
+    }
+
+    function tick(){ update(); draw(); requestAnimationFrame(tick); }
+
+    function willCollide(tank,dx,dy){return false;} // simplified
+
+    function startGame(){ initGame(); tick(); }
+
+  </script>
 </body>
 </html>
