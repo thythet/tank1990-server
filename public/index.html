@@ -1,28 +1,91 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tank1990 Online</title>
-  <link rel="stylesheet" href="style.css">
-  <style>
-    body { font-family: Arial, sans-serif; text-align: center; background: #222; color: #fff; }
-    #loginScreen { margin-top: 100px; }
-    #gameCanvas { background: #000; display: none; margin: 20px auto; border: 2px solid #fff; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tank1990 — Battle Defense (Modern + Online Multiplayer)</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="loginScreen">
-    <h2>Login</h2>
-    <input type="text" id="username" placeholder="Username"><br><br>
-    <input type="password" id="password" placeholder="Password"><br><br>
-    <button id="loginBtn">Login</button>
-    <p id="loginError" style="color:red;"></p>
+<div class="app">
+  <header>
+    <div>
+      <h1>Tank1990 — Battle Defense</h1>
+      <div class="small">AI enemies + online multiplayer with username display.</div>
+    </div>
+    <div class="hud">
+      <div class="stat">Score: <span id="uiScore">0</span></div>
+      <div class="stat">Lives: <span id="uiLives">3</span></div>
+      <div class="stat">Level: <span id="uiLevel">1</span></div>
+      <div>
+        <button class="btn" id="startBtn">Start / Resume</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <div class="panel">
+      <canvas id="gameCanvas" width="768" height="768"></canvas>
+    </div>
+    <aside class="panel">
+      <div class="admin-area">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <strong style="color:#e6f4ff">Accounts</strong>
+          <div id="loggedAs" class="username-tag">Guest</div>
+        </div>
+
+        <div id="authForms">
+          <div class="form">
+            <label class="label">Login (username & password)</label>
+            <input id="loginUser" placeholder="username">
+            <input id="loginPass" type="password" placeholder="password">
+            <div style="display:flex;gap:8px">
+              <button id="loginBtn" class="btn">Login</button>
+              <button id="guestBtn" class="btn">Guest</button>
+            </div>
+          </div>
+          <hr>
+          <div class="form">
+            <label class="label">Admin Sign-in</label>
+            <input id="adminPass" type="password" placeholder="admin password">
+            <div>
+              <button id="adminLoginBtn" class="btn">Admin Panel</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="adminPanel" style="display:none;margin-top:8px">
+          <strong class="small">Admin — Manage Players</strong>
+          <div class="form">
+            <input id="newUserName" placeholder="new username">
+            <input id="newUserPass" placeholder="password">
+            <select id="newUserRole">
+              <option value="player">Player</option>
+              <option value="admin">Admin</option>
+            </select>
+            <div style="display:flex;gap:8px">
+              <button id="createUserBtn" class="btn">Create User</button>
+              <button id="listUsersBtn" class="btn">List Users</button>
+            </div>
+          </div>
+          <div id="usersList" style="max-height:200px;overflow:auto;margin-top:8px"></div>
+        </div>
+
+        <hr>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+          <button id="restartBtn" class="btn">Restart</button>
+          <button id="networkBtn" class="btn">Enable Online</button>
+        </div>
+      </div>
+    </aside>
   </div>
 
-  <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <footer>
+    Note: For real online play, run a Node.js + Socket.IO server.
+  </footer>
+</div>
 
-  <script src="https://cdn.socket.io/4.7.0/socket.io.min.js"></script>
-  <script src="game.js"></script>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="game.js"></script>
 </body>
 </html>
